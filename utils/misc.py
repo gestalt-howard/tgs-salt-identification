@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 import os
 import cv2
+import pdb
 
 import numpy as np
 
@@ -124,3 +125,65 @@ class CrossEntropyLoss2d(nn.Module):
 
     def forward(self, inputs, targets):
         return self.nll_loss(F.log_softmax(inputs, dim=self.dim), targets)
+
+
+# Function for removing initial padding
+def crop_padding(sample):
+    """
+    Undoes the original padding operation and maintains the dimensions of the
+    other axes in the input sample
+    Input:
+    - sample (numpy array): array containing output of deep network (last two
+        dimensions should be 128 and 128)
+    Output:
+    - all_samples (numpy array): cropped array (down to original 101 x 101)
+        with the same number of elements and channels as the input sample
+    """
+    # Padding dimensions
+    x_pad = 13
+    y_pad = 14
+    # Input / output dims
+    output_dim = 101
+    x_extent = x_pad + output_dim
+    y_extent = y_pad + output_dim
+    input_dim = 128
+
+    # Get input sample dimensions
+    sample_dim = np.array(sample.shape)
+    assert (sample_dim[-1]==input_dim)&(sample_dim[-2]==input_dim)
+    # Define cropped output dimensions
+    cropped_dim = sample_dim.copy()
+    cropped_dim[-1] = output_dim
+    cropped_dim[-2] = output_dim
+
+    all_samples = sample.reshape((-1, input_dim, input_dim))
+    all_samples = all_samples[:, x_pad:x_extent, y_pad:y_extent]
+
+    return all_samples.reshape(cropped_dim)
+
+
+# Function for making a new directory if it doesn't already exist
+def check_dir(path):
+    """Function for making a new directory if it doesn't already exist"""
+    if not os.path.exists(path):
+        os.mkdir(path)
+    else:
+        pass
+
+
+# Function for pulling the latest model version
+def check_latest_version(prefix, path):
+    """
+    Function for finding the number from the latest model, given a specific
+    prefix
+    Input(s):
+    - prefix (str): prefix designating the model type
+    - path (str): path to directory of weights
+    """
+    folders = os.listdir(path)
+    filtered_folders = [f for f in folders if prefix in f]
+    if len(folders)==0:
+        return 0
+    else:
+        indexes = np.array([int(f.split('_')[1]) for f in filtered_folders])
+        return np.max(indexes)

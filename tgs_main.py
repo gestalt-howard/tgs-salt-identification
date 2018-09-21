@@ -13,7 +13,7 @@ from torch.utils.data import sampler
 import torchvision.transforms as T
 
 # Utilities import
-
+from utils.misc import check_dir, check_latest_version
 # Model import
 from models.res_seg_19 import conv3x3, ResidualBlock, ResSeg19
 # Dataset import
@@ -34,6 +34,8 @@ def main():
                         help='input batch size (default: 3)')
     parser.add_argument('--epochs', type=int, default=10,
                         help='number of epochs to train for (default: 10)')
+    parser.add_argument('--starting_epoch', type=int, default=1,
+                        help='index of starting epoch (default: 1)')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='learning rate (default: 0.001)')
     parser.add_argument('--lr_patience', type=int, default=10,
@@ -50,8 +52,28 @@ def main():
     trn_path = args.trn_path
     msk_path = args.msk_path
     tst_path = args.tst_path
+    starting_epoch = args.starting_epoch
     NUM_TRAIN = args.NUM_TRAIN
     NUM_FULL = args.NUM_FULL
+
+    # Find number of existing models
+    model_weight_path = './weights/'
+    folder_prefix = 'model_'
+    model_idx = check_latest_version(folder_prefix, model_weight_path) + 1
+    # Create a new directory
+    model_path = model_weight_path + folder_prefix + str(model_idx) + '/'
+    check_dir(model_path)
+
+    # Define or load training history
+    best_record = {}
+    training_history = {}
+    if starting_epoch<=1:
+        best_record['epoch'] = 0
+        best_record['val_loss'] = 1e10
+        best_record['mean_iou'] = 0
+    else:
+        data_dir = './weights/model_'
+
 
     # Define device and dtype
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

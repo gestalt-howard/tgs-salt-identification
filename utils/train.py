@@ -5,14 +5,16 @@ sys.path.append('../')
 import argparse
 import pdb
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 
 # Utils import
-from misc import get_paths, AverageMeter
+from misc import get_paths, AverageMeter, crop_padding
 from misc import Simple_Network
 from misc import CrossEntropyLoss2d
 # Dataset import
@@ -77,7 +79,7 @@ def check_train_log(loader, net, criterion, optimizer, args, device, dtype):
 
 def check_loss(loader, net, criterion, optimizer, args, device, dtype):
     """Unit test for verifying loss behavior"""
-    num_epochs=1000
+    num_epochs=100
     running_log = []
     train_dict = {
         'loader': loader,
@@ -95,6 +97,41 @@ def check_loss(loader, net, criterion, optimizer, args, device, dtype):
     plt.figure(figsize=(10, 6))
     plt.plot(running_log, c='red')
     plt.xlabel('epochs'); plt.ylabel('loss'); plt.title('Loss wrt Epoch')
+    plt.show()
+
+def check_channels(net, val_load, device, dtype):
+    """Unit test for verifying network output channels"""
+    with torch.no_grad():
+        # Parse sample
+        for val_img, val_msk, val_pic in val_load:
+            val_img = val_img.to(device=device, dtype=dtype)
+            # Get prediction
+            scores = net(val_img)
+            scores = F.softmax(scores, dim=1)
+            scores = scores.numpy()
+            scores = (scores > 0.7).astype(np.uint8)
+            break
+    # Plot stuff
+    masks = val_msk.numpy()
+    fig, axes = plt.subplots(len(masks), 3, figsize=(9, 9))
+    axes = axes.ravel()
+    c = 0
+    for i, mask in enumerate(masks):
+        # Plot mask
+        axes[c].imshow(mask)
+        axes[c].set_title('mask')
+        axes[c].set_axis_off()
+        c+=1
+        # Plot channel 0
+        axes[c].imshow(scores[i][0])
+        axes[c].set_title('channel_0')
+        axes[c].set_axis_off()
+        c+=1
+        # Plot channel 1
+        axes[c].imshow(scores[i][1])
+        axes[c].set_title('channel_1')
+        axes[c].set_axis_off()
+        c+=1
     plt.show()
 
 
@@ -130,6 +167,8 @@ def main():
     check_train_log(trn_load, net, criterion, optimizer, args, device, dtype)
     # unit test
     check_loss(trn_load, net, criterion, optimizer, args, device, dtype)
+    # Unit test
+    check_channels(net, val_load, device, dtype)
 
 
 if __name__=='__main__':

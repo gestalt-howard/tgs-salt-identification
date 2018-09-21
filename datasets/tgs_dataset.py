@@ -113,7 +113,7 @@ class Padder(object):
         pad_y = 14
 
         placeholder = np.zeros((self.output_size, self.output_size, d))
-        placeholder[pad_y:pad_y+h, pad_x:pad_x+w] = sample
+        placeholder[pad_y:pad_y+h, pad_x:pad_x+w, :] = sample
         if self.mask:
             return placeholder.squeeze()
         else:
@@ -224,7 +224,10 @@ def check_img_dims(trn):
     msk = trn[1]
     assert img.size()==(1, 128, 128)
     assert msk.size()==(128, 128)
-    assert torch.max(msk).item()==1.
+    if torch.max(msk).item()!=0:
+        assert torch.max(msk).item()==1.
+    else:
+        assert torch.max(msk).item()==0
 
 
 # Main function (unit tests)
