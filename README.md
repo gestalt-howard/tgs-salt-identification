@@ -2,4 +2,4 @@
 
 ***Project Complete: Ongoing***
 
-![tgs_logo](https://github.com/gestalt-howard/santander-value-prediction/blob/master/images/santander_logo.jpg)
+![tgs_logo](https://github.com/gestalt-howard/tgs-salt-identification/blob/master/images/tgs_logo.png)
