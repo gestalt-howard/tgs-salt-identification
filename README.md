@@ -2,6 +2,4 @@
 
 ***Project Complete: Ongoing***
 
-![tgs_logo](https://github.com/gestalt-howard/tgs-salt-identification/blob/master/images/tgs_logo.png)
-
-<img src="https://github.com/gestalt-howard/tgs-salt-identification/blob/master/images/tgs_logo.png" width="48">
+<img src="https://github.com/gestalt-howard/tgs-salt-identification/blob/master/images/tgs_logo.png" width="400">
