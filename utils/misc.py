@@ -9,8 +9,21 @@ import torch.nn.functional as F
 import os
 import cv2
 import pdb
+import pickle
 
 import numpy as np
+
+
+def save_pickle(data, path):
+    """Saves data in pickle format"""
+    with open(path, 'wb') as handle:
+        pickle.dump(data, handle)
+
+
+def load_pickle(path):
+    """Loads data in pickle format"""
+    with open(path, 'rb') as handle:
+        return pickle.load(handle)
 
 
 def data_loader(path):
@@ -164,11 +177,21 @@ def crop_padding(sample):
 
 # Function for making a new directory if it doesn't already exist
 def check_dir(path):
-    """Function for making a new directory if it doesn't already exist"""
+    """
+    Function for making a new directory if it doesn't already exist
+    Input(s):
+    - path (str): path to directory that is being checked
+    Output(s):
+    - token (int or None): token that determines whether or not a training
+        should take place from scratch. A return value of 1 only occurs when
+        the input path did not exist and therefore implies that training must
+        begin from the beginning
+    """
     if not os.path.exists(path):
         os.mkdir(path)
+        return 1
     else:
-        pass
+        return None
 
 
 # Function for pulling the latest model version

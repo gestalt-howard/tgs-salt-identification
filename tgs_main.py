@@ -13,7 +13,11 @@ from torch.utils.data import sampler
 import torchvision.transforms as T
 
 # Utilities import
-from utils.misc import check_dir, check_latest_version
+from utils.misc import load_pickle, save_pickle
+from utils.misc import check_dir
+from utils.misc import Simple_Network
+from utils.train import train
+from utils.validate import validate
 # Model import
 from models.res_seg_19 import conv3x3, ResidualBlock, ResSeg19
 # Dataset import
@@ -30,6 +34,8 @@ def main():
                         help='path to mask directory (default: debug)')
     parser.add_argument('--tst_path', type=str, default='./data/debug_test/',
                         help='path to test directory (default: debug)')
+    parser.add_argument('--mod_path', type=str, default='./weights/model_tmp/',
+                        help='path to model weights directory (default: tmp)')
     parser.add_argument('--batch_size', type=int, default=3,
                         help='input batch size (default: 3)')
     parser.add_argument('--epochs', type=int, default=10,
@@ -52,55 +58,57 @@ def main():
     trn_path = args.trn_path
     msk_path = args.msk_path
     tst_path = args.tst_path
+    mod_path = args.mod_path
     starting_epoch = args.starting_epoch
     NUM_TRAIN = args.NUM_TRAIN
     NUM_FULL = args.NUM_FULL
 
-    # Find number of existing models
-    model_weight_path = './weights/'
-    folder_prefix = 'model_'
-    model_idx = check_latest_version(folder_prefix, model_weight_path) + 1
-    # Create a new directory
-    model_path = model_weight_path + folder_prefix + str(model_idx) + '/'
-    check_dir(model_path)
+    record_name = 'best_record.pickle'
+    history_name = 'training_history.pickle'
 
-    # Define or load training history
-    best_record = {}
-    training_history = {}
-    if starting_epoch<=1:
-        best_record['epoch'] = 0
-        best_record['val_loss'] = 1e10
-        best_record['mean_iou'] = 0
-    else:
-        data_dir = './weights/model_'
-
-
-    # Define device and dtype
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    dtype = torch.float32
-
-    # Current epoch information
-    curr_epoch = 1
+    # Validate specified model path
+    restart_token = check_dir(mod_path)  # Returns None if path exists
 
     # Define model
     net = ResSeg19(ResidualBlock)
-
-    # Load data
-    paths = (tnr_path, msk_path, tst_path)
-    stats = (NUM_TRAIN, NUM_FULL, args.batch_size)
-    trn_set, msk_set, tst_set = data_formatter(paths, stats)
-    # Unpack data
-    trn_data, trn_load = trn_set
-    msk_data, msk_load = msk_set
-    tst_data, tst_load = tst_set
-
     # Loss function
     criterion = nn.CrossEntropyLoss()
     # Optimizer
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
 
+    # Define or load training history
+    def format_epoch_fname(start_num):
+        return mod_path + 'epoch_%s.pth'%start_num
+
+    best_record = {}
+    training_history = {}
+    if restart_token:  # Starting from scratch
+        curr_epoch = 1
+        best_record['epoch'] = 0
+        best_record['val_loss'] = 1e10
+        best_record['mean_iou'] = 0
+    else:
+        print 'Resuming training from epoch:', starting_epoch
+        curr_epoch = starting_epoch+1
+        net.load_state_dict(torch.load(format_epoch_fname(curr_epoch)))
+        best_record = load_pickle(mod_path + record_name)
+        training_history = load_pickle(mod_path + history_name)
+
+    # Define device and dtype
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    dtype = torch.float32
+
+    # Load data
+    paths = (trn_path, msk_path, tst_path)
+    stats = (NUM_TRAIN, NUM_FULL, args.batch_size)
+    trn_set, val_set, tst_set = data_formatter(paths, stats)
+    # Unpack data
+    trn_data, trn_load = trn_set
+    val_data, val_load = val_set
+    tst_data, tst_load = tst_set
+
     # Define automatic LR reduction scheduler
-    scheduler = optim.ReduceLROnPlateau(
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer=optimizer,
         mode='min',
         patience=args.lr_patience,
@@ -108,7 +116,7 @@ def main():
     )
     # Model API parameters
     param_dict = {
-        'loader': loader,
+        'loader': None,
         'net': net,
         'criterion': criterion,
         'optimizer': optimizer,
@@ -118,10 +126,39 @@ def main():
         'dtype': dtype
     }
     # Note: epoch starts from 1, not 0
-    for epoch in range(curr_epoch, args.epochs+1):
+    for i, epoch in enumerate(range(curr_epoch, args.epochs+1)):
+        # Update epoch
         param_dict['epoch'] = epoch
+        # Train
+        param_dict['loader'] = trn_load
         trn_log = train(**param_dict)
-        val_loss = validate()
+        # Validate
+        param_dict['loader'] = val_load
+        val_loss, mean_iou = validate(**param_dict)
+
+        # Update logging files
+        training_history['epoch_%s'%(i+1)] = trn_log
+        # Save weights if avg_iou score improves
+        if val_loss < best_record['val_loss']:
+            best_record['epoch'] = epoch
+            best_record['val_loss'] = val_loss
+            best_record['mean_iou'] = mean_iou
+            torch.save(net.state_dict(), format_epoch_fname(epoch))
+
+        # Print best record information
+        print '--------------------------------------'
+        print 'best record: [epoch %d], [val_loss %.4f], [mean_iou %.4f]'%(
+            best_record['epoch'],
+            best_record['val_loss'],
+            best_record['mean_iou']
+        )
+        print '--------------------------------------'
+        print ''
+
+        # Save logging information every epoch
+        save_pickle(data=training_history, path=mod_path+history_name)
+        save_pickle(data=best_record, path=mod_path+record_name)
+
         scheduler.step(val_loss)
 
 
