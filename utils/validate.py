@@ -72,6 +72,7 @@ def validate(loader, net, criterion, optimizer, epoch, args, device, dtype):
         epoch, val_loss.avg, mean_iou)
     print '--------------------------------------'
 
+    net.train()
     return val_loss.avg, mean_iou
 
 

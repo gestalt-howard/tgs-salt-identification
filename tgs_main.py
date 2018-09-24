@@ -1,4 +1,4 @@
-# Main script for TGS Kaggle challenge
+# Main training script for TGS Kaggle challenge
 import argparse
 import os
 import pdb
@@ -19,7 +19,8 @@ from utils.misc import Simple_Network
 from utils.train import train
 from utils.validate import validate
 # Model import
-from models.res_seg_19 import conv3x3, ResidualBlock, ResSeg19
+from models.res_seg_19 import ResidualBlock, ResSeg19
+from models.res_seg_19 import ResBlock_Reg, ResSeg19_Reg
 # Dataset import
 from datasets.tgs_dataset import data_formatter
 
@@ -69,8 +70,9 @@ def main():
     # Validate specified model path
     restart_token = check_dir(mod_path)  # Returns None if path exists
 
-    # Define model
-    net = ResSeg19(ResidualBlock)
+    # Define model (comment out irrelevant models as necessary)
+    # net = ResSeg19(ResidualBlock)
+    net = ResSeg19_Reg(ResBlock_Reg)
     # Loss function
     criterion = nn.CrossEntropyLoss()
     # Optimizer
@@ -89,14 +91,19 @@ def main():
         best_record['mean_iou'] = 0
     else:
         print 'Resuming training from epoch:', starting_epoch
+        net.load_state_dict(torch.load(format_epoch_fname(starting_epoch)))
         curr_epoch = starting_epoch+1
-        net.load_state_dict(torch.load(format_epoch_fname(curr_epoch)))
         best_record = load_pickle(mod_path + record_name)
         training_history = load_pickle(mod_path + history_name)
 
     # Define device and dtype
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dtype = torch.float32
+    # Parallelization init and set net to CUDA if possible
+    if torch.cuda.is_available():
+        net.cuda()
+        net=torch.nn.DataParallel(net, device_ids=range(
+            torch.cuda.device_count()))
 
     # Load data
     paths = (trn_path, msk_path, tst_path)
