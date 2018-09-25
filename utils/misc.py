@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import os
 import cv2
 import pdb
+import shutil
 import pickle
 
 import numpy as np
@@ -192,6 +193,23 @@ def check_dir(path):
         return 1
     else:
         return None
+
+
+# Aggressive version of check_dir which deletes a directory and creates it anew
+def force_dir(path):
+    """
+    Function for making a new directory even if it doesn't already exist (more
+        aggressive version of check_dir)
+    Input(s):
+    - path (str): path to directory that is being checked
+    Output(s):
+    [None]
+    """
+    if not os.path.exists(path):
+        os.mkdir(path)
+    else:
+        shutil.rmtree(path)
+        os.mkdir(path)
 
 
 # Function for pulling the latest model version
