@@ -21,6 +21,7 @@ from utils.validate import validate
 # Model import
 from models.res_seg_19 import ResidualBlock, ResSeg19
 from models.res_seg_19 import ResBlock_Reg, ResSeg19_Reg
+from models.res_seg_39 import ResSeg39
 # Dataset import
 from datasets.tgs_dataset import data_formatter
 
@@ -72,7 +73,9 @@ def main():
 
     # Define model (comment out irrelevant models as necessary)
     # net = ResSeg19(ResidualBlock)
-    net = ResSeg19_Reg(ResBlock_Reg)
+    # net = ResSeg19_Reg(ResBlock_Reg)
+    net = ResSeg39(ResidualBlock, [3, 4, 6, 3])
+
     # Loss function
     criterion = nn.CrossEntropyLoss()
     # Optimizer

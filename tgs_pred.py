@@ -7,6 +7,7 @@ import torch
 
 # Models import
 from models.res_seg_19 import ResSeg19, ResidualBlock
+from models.res_seg_19 import Resseg19_Reg, ResBlock_Reg
 
 
 def main():
