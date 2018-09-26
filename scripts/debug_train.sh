@@ -1,4 +1,4 @@
-# Shell script for training ResSeg19 in debug mode
+# Shell script for training models in debug mode
 
 trn_path=../data/debug_train/
 msk_path=../data/debug_masks/

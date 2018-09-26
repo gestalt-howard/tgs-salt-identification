@@ -1,7 +1,6 @@
-# Script for loading trained model and making predictions
+# Script containing validation visualization API and unit tests
+import cv2
 import argparse
-import os
-import pdb
 
 import numpy as np
 
@@ -10,38 +9,84 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Models import
-from models.res_seg_19 import ResSeg19, ResidualBlock
-from models.res_seg_19 import ResSeg19_Reg, ResBlock_Reg
-from models.res_seg_39 import ResSeg39
 # Utilities import
-from utils.misc import force_dir
-from utils.misc import save_pickle, load_pickle
-from utils.misc import save_h5, load_h5
-from utils.vis_validate import vis_validate
+from misc import force_dir
+from misc import save_pickle, load_pickle
+from misc import save_h5, load_h5
+# Models import
+from models.res_seg_19 import ResSeg19_Reg, ResBlock_Reg
 # Dataset import
 from datasets.tgs_dataset import data_formatter
 
 
+def vis_validate(loader, net, device, dtype, path):
+    """
+    Function for visualizing network performance on one batch of validation
+    data
+    Input(s):
+    - loader (PyTorch loader object): loader for queueing minibatches
+    - net (module object): Pytorch network module object (set to eval mode)
+    - device (PyTorch device)
+    - dtype (PyTorch datatype)
+    Output(s):
+    [None]
+    """
+    mask_path = path + 'val_masks/'
+    pred_path = path + 'val_preds/'
+
+    force_dir(mask_path)
+    force_dir(pred_path)
+
+    with torch.no_grad():
+        for (x, y, name) in loader:
+            x = x.to(device=device, dtype=dtype)
+            y = y.to(device=device, dtype=torch.long)
+
+            # Make predictions
+            scores = net(x)
+
+            # Define ground-truth and predictions
+            batch_masks = y.data.cpu().numpy()
+            batch_preds = F.softmax(scores, dim=1
+                ).data.cpu().numpy()[:, 1, :, :]
+            break
+
+    # Save data
+    save_h5(data=batch_masks, path=mask_path+'mask_data.h5')
+    save_h5(data=batch_preds, path=pred_path+'pred_data.h5')
+    save_pickle(data=name, path=pred_path+'pred_name.pickle')
+    # Save images
+    for i, n in enumerate(name):
+        # Save ground-truth mask
+        cv2.imwrite(mask_path + n, batch_masks[i])
+        # Save mask prediction
+        cv2.imwrite(pred_path + n, batch_preds[i])
+
+    return None
+
+
+# Unit tests
+def check_visualization(params):
+    """Unit test for verifying visualization validation"""
+    vis_validate(**params)
+
+
+# Main function (unit tests)
 def main():
     # Import settings (note that default debug settings are used)
     parser=argparse.ArgumentParser(description='TGS Challenge Test Script')
-    parser.add_argument('--trn_path', type=str, default='./data/debug_train/',
+    parser.add_argument('--trn_path', type=str, default='../data/debug_train/',
                         help='path to training directory (default: debug)')
-    parser.add_argument('--msk_path', type=str, default='./data/debug_masks',
+    parser.add_argument('--msk_path', type=str, default='../data/debug_masks',
                         help='path to mask directory (default: debug)')
-    parser.add_argument('--tst_path', type=str, default='./data/debug_test/',
+    parser.add_argument('--tst_path', type=str, default='../data/debug_test/',
                         help='path to test directory (default: debug)')
-    parser.add_argument('--mod_path', type=str, default='./weights/model_tst/',
+    parser.add_argument('--mod_path', type=str, default='../weights/model_tst/',
                         help='path to model weights directory (default: tst)')
     parser.add_argument('--prd_path', type=str, default='preds/',
                         help='path to save test mask predictions')
     parser.add_argument('--val_path', type=str, default='validate/',
                         help='path to save validation visualizations')
-    parser.add_argument('--val_flag', type=int, default=1,
-                        help='Flag for turning val visualization on/off')
-    parser.add_argument('--prd_flag', type=int, default=0,
-                        help='Flag for turning test prediction on/off')
     parser.add_argument('--mod_name', type=str, default='epoch_10.pth',
                         help='name of epoch weights to load in given mod_path')
     parser.add_argument('--batch_size', type=int, default=3,
@@ -63,13 +108,12 @@ def main():
     NUM_TRAIN = args.NUM_TRAIN
     NUM_FULL = args.NUM_FULL
 
-    val_flag = bool(args.val_flag)
-    prd_flag = bool(args.prd_flag)
+    # Aggressively check save paths
+    force_dir(prd_path)
+    force_dir(val_path)
 
-    # Define model (comment out irrelvant models as necessary)
-    net = ResSeg19(ResidualBlock)
-    # net = ResSeg19_Reg(ResBlock_Reg)
-    # net = ResSeg39(ResidualBlock, [3, 4, 6, 3])
+    # Define model
+    net = ResSeg19_Reg(ResBlock_Reg)
 
     # Define device and dtype
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -82,10 +126,7 @@ def main():
 
     # Load model weights
     print 'Loading model:\n', mod_name
-    if not torch.cuda.is_available():
-        net.load_state_dict(torch.load(mod_name, map_location='cpu'))
-    else:
-        net.load_state_dict(torch.load(mod_name))
+    net.load_state_dict(torch.load(mod_name))
     net.eval()
 
     # Load data
@@ -97,41 +138,15 @@ def main():
     val_data, val_load = val_set
     tst_data, tst_load = tst_set
 
-    # Validation visualization option
-    if val_flag:
-        print 'Creating validation visualizations...'
-        force_dir(val_path)
-        vis_validate(val_load, net, device, dtype, val_path)
-
-    # Test predictions
-    if prd_flag:
-        print 'Creating test predictions...'
-        force_dir(prd_path)
-        with torch.no_grad():
-            preds_list = []
-            names_list = []
-            for i, (x, name) in enumerate(tst_load):
-                # Get predictions
-                x = x.to(device=device, dtype=dtype)
-                scores = net(x)
-                # Define predictions
-                batch_preds = F.softmax(scores, dim=1
-                    ).data.cpu().numpy()[:, 1, :, :]
-                # Assemble save ingredients
-                preds_list.append(batch_preds.squeeze())
-                names_list += name
-                # Print status
-                print 'Batch %d / %d complete'%(i+1, len(tst_load))
-
-            # Aggregate batch data
-            preds = np.concatenate(preds_list)
-            assert len(names_list)==preds.shape[0]
-
-        # Save aggregated data
-        save_h5(data=preds, path=prd_path+'pred_data.h5')
-        save_pickle(data=names_list, path=prd_path+'pred_name.pickle')
-
-    return None
+    # Unit test
+    params = {
+        'loader': val_load,
+        'net': net,
+        'device': device,
+        'dtype': dtype,
+        'path': val_path
+    }
+    check_visualization(params)
 
 
 if __name__=='__main__':

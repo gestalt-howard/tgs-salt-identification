@@ -1,4 +1,4 @@
-# Shell script for training ResSeg19 in full mode
+# Shell script for training models in full mode
 
 trn_path=../data/train_images/
 msk_path=../data/train_masks/

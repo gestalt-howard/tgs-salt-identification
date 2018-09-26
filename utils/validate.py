@@ -59,8 +59,8 @@ def validate(loader, net, criterion, optimizer, epoch, args, device, dtype):
             batch_preds = F.softmax(scores, dim=1
                 ).data.cpu().numpy()[:, 1, :, :]
             # Assemble evaluation ingredients
-            masks_list.append(batch_masks)
             preds_list.append(batch_preds.squeeze())
+            masks_list.append(batch_masks)
 
         # Evaluate performance
         preds = np.concatenate(preds_list)

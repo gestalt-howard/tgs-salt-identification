@@ -12,6 +12,7 @@ import pdb
 import shutil
 import pickle
 
+import h5py as h5
 import numpy as np
 
 
@@ -25,6 +26,18 @@ def load_pickle(path):
     """Loads data in pickle format"""
     with open(path, 'rb') as handle:
         return pickle.load(handle)
+
+
+def save_h5(data, path):
+    """Saves data in h5 format"""
+    with h5.File(path, 'w') as handle:
+        handle.create_dataset('data', data=data)
+
+
+def load_h5(path):
+    """Loads data saved in h5 format"""
+    with h5.File(path, 'r') as handle:
+        return handle['data'][:]
 
 
 def data_loader(path):
@@ -206,8 +219,10 @@ def force_dir(path):
     [None]
     """
     if not os.path.exists(path):
+        print 'Creating new folder...'
         os.mkdir(path)
     else:
+        print 'Removing existing folder and creating new folder...'
         shutil.rmtree(path)
         os.mkdir(path)
 
