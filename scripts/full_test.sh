@@ -4,6 +4,7 @@ trn_path=../data/train_images/
 msk_path=../data/train_masks/
 tst_path=../data/test_images/
 
+############################################################
 #### IMPORTANT! Make sure tgs_pred reflects these values####
 mod_path=../weights/model_res19/
 val_flag=1

@@ -32,7 +32,7 @@ def make_submission(images, names, uni):
             img = crop_padding(img)
             assert img.shape==(101, 101)
 
-        assert len(np.unique(img))==2
+        assert len(np.unique(img))<=2
 
         # Start looking for activated pixels
         ones_tracker=0
@@ -62,11 +62,13 @@ def make_submission(images, names, uni):
         assert type(e_mask)==str
         masks.append(e_mask)
 
+    save_names = [n.split('.png')[0] for n in names]
     submit_dict = {}
-    submit_dict['id'] = names
+    submit_dict['id'] = save_names
     submit_dict['rle_mask'] = masks
 
     submit_df = pd.DataFrame.from_dict(submit_dict, orient='columns')
+    submit_df.fill_na('', inplace=True)
 
     return submit_df
 
