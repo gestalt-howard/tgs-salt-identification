@@ -68,7 +68,7 @@ def make_submission(images, names, uni):
     submit_dict['rle_mask'] = masks
 
     submit_df = pd.DataFrame.from_dict(submit_dict, orient='columns')
-    submit_df.fill_na('', inplace=True)
+    submit_df.fillna('', inplace=True)
 
     return submit_df
 
@@ -104,10 +104,10 @@ def main():
                              [0, 0, 1, 0],
                              [1, 1, 1, 1],
                              [0, 0, 0, 1]])
-        sample_2 = np.array([[1, 0, 1, 0],
-                             [0, 0, 1, 0],
+        sample_2 = np.array([[0, 0, 0, 0],
                              [0, 0, 0, 0],
-                             [0, 0, 0, 1]])
+                             [0, 0, 0, 0],
+                             [0, 0, 0, 0]])
         sample_3 = np.array([[1, 1, 1, 1],
                              [1, 0, 1, 0],
                              [1, 0, 0, 0],
@@ -131,7 +131,7 @@ def main():
     if uni_flag: # Unit test
         assert np.array_equal(df['id'].values, names)
         assert df.loc[0]['rle_mask']=='2 2 7 1 9 4 16 1', 'Sample 1'
-        assert df.loc[1]['rle_mask']=='1 1 3 1 7 1 16 1', 'Sample 2'
+        assert df.loc[1]['rle_mask']=='', 'Sample 2'
         assert df.loc[2]['rle_mask']=='1 5 7 1 9 1 15 1', 'Sample 3'
         assert df.loc[3]['rle_mask']=='1 4 7 1 9 1 13 3', 'Sample 4'
     else:
