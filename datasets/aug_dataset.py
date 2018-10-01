@@ -136,9 +136,11 @@ class Train_Dataset(Dataset):
                 mask = rotate(mask, rotate_angle, order=0, mode='symmetric',
                               preserve_range=True)
 
-            #
+            # Scale the image at a random scaling factor
             if int((random()>.5)*1) == 1:
-                scale = (np.random.random()*float(self.scale_range[1]-self.scale_range[0])) + self.scale_range[0]
+                scale = (
+                    random()*float(self.scale_range[1]-self.scale_range[0])
+                         ) + self.scale_range[0]
                 h_scale = int(float(scale)*float(img_size[0]))
                 v_scale = int(float(scale)*float(img_size[1]))
                 image = cv2.resize(image, (h_scale,v_scale), interpolation=cv2.INTER_LINEAR)

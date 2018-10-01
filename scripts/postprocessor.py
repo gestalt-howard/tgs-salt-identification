@@ -34,26 +34,13 @@ def make_submission(images, names, uni):
 
         assert len(np.unique(img))<=2
 
-        # Start looking for activated pixels
-        ones_tracker=0
-        flat_img = img.flatten(order='C')
+        # Look for activated pixels
+        pixels = img.flatten(order='F')
+        pixels = np.concatenate([[0], pixels, [0]])
+        runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
+        runs[1::2] -= runs[::2]
 
-        for pixel, val in enumerate(flat_img):
-            if val==0:
-                if ones_tracker!=0:
-                    enc_mask+=[(pixel+1)-ones_tracker, ones_tracker]
-                ones_tracker=0
-            else:
-                ones_tracker+=1
-        # Edge case: all zeros except last few pixels (still needs update)
-        if ones_tracker!=0:
-            enc_mask+=[pixel+1, ones_tracker]
-
-        # Join enc_mask elements into a single string
-        enc_strings = [str(i) for i in enc_mask]
-        enc_strings = ' '.join(enc_strings)
-
-        return enc_strings
+        return ' '.join(str(x) for x in runs)
 
     # Iterate over each prediction image and get mask from image
     masks = []
@@ -68,7 +55,6 @@ def make_submission(images, names, uni):
     submit_dict['rle_mask'] = masks
 
     submit_df = pd.DataFrame.from_dict(submit_dict, orient='columns')
-    submit_df.fillna('', inplace=True)
 
     return submit_df
 
@@ -130,10 +116,10 @@ def main():
 
     if uni_flag: # Unit test
         assert np.array_equal(df['id'].values, names)
-        assert df.loc[0]['rle_mask']=='2 2 7 1 9 4 16 1', 'Sample 1'
+        assert df.loc[0]['rle_mask']=='3 1 5 1 7 1 9 3 15 2', 'Sample 1'
         assert df.loc[1]['rle_mask']=='', 'Sample 2'
-        assert df.loc[2]['rle_mask']=='1 5 7 1 9 1 15 1', 'Sample 3'
-        assert df.loc[3]['rle_mask']=='1 4 7 1 9 1 13 3', 'Sample 4'
+        assert df.loc[2]['rle_mask']=='1 3 5 1 9 2 12 2', 'Sample 3'
+        assert df.loc[3]['rle_mask']=='1 1 3 3 8 3 12 2', 'Sample 4'
     else:
         df.to_csv(subm_path, index=False)
 

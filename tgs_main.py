@@ -74,7 +74,8 @@ def main():
     # Define model (comment out irrelevant models as necessary)
     # net = ResSeg19(ResidualBlock)
     # net = ResSeg19_Reg(ResBlock_Reg)
-    net = ResSeg39(ResidualBlock, [3, 4, 6, 3])
+    # net = ResSeg39(ResidualBlock, [3, 4, 6, 3])
+    net = ResSeg39(ResBlock_Reg, [3, 4, 6, 3])
 
     # Loss function
     criterion = nn.CrossEntropyLoss()
