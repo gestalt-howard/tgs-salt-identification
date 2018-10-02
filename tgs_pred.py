@@ -11,9 +11,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # Models import
-from models.res_seg_19 import ResSeg19, ResidualBlock
-from models.res_seg_19 import ResSeg19_Reg, ResBlock_Reg
-from models.res_seg_39 import ResSeg39
+from models.res_seg_33 import ResSeg33, ResidualBlock
+from models.res_seg_33 import ResSeg33_Reg, ResBlock_Reg
+from models.res_seg_var import ResSegVar
 # Utilities import
 from utils.misc import force_dir
 from utils.misc import save_pickle, load_pickle
@@ -67,9 +67,9 @@ def main():
     prd_flag = bool(args.prd_flag)
 
     # Define model (comment out irrelvant models as necessary)
-    net = ResSeg19(ResidualBlock)
-    # net = ResSeg19_Reg(ResBlock_Reg)
-    # net = ResSeg39(ResidualBlock, [3, 4, 6, 3])
+    net = ResSeg33(ResidualBlock)
+    # net = ResSeg33_Reg(ResBlock_Reg)
+    # net = ResSegVar(ResidualBlock, [3, 4, 6, 3])
 
     # Define device and dtype
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

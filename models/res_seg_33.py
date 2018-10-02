@@ -72,12 +72,12 @@ class ResBlock_Reg(nn.Module):
         return out
 
 
-# Segmentation Resnet (19 Layers)
-class ResSeg19(nn.Module):
+# Segmentation Resnet (33 Layers)
+class ResSeg33(nn.Module):
     """ResNet for Segmentation Task"""
 
     def __init__(self, block):
-        super(ResSeg19, self).__init__()
+        super(ResSeg33, self).__init__()
 
         # Define number of channels
         self.in_channels = 64
@@ -154,7 +154,7 @@ class ResSeg19(nn.Module):
         x = self.relu(self.bn2(self.conv2(x)))
         x = self.relu(self.bn3(self.conv3(x)))
 
-        # Res blocks
+        # Res stacks
         x = self.res1(x)
         x = self.res2(x)
         x = self.res3(x)
@@ -167,12 +167,12 @@ class ResSeg19(nn.Module):
         return x
 
 
-# Segmentation ResNet with MaxPool and Dropout (19 Layers)
-class ResSeg19_Reg(ResSeg19):
+# Segmentation ResNet with MaxPool and Dropout (33 Layers)
+class ResSeg33_Reg(ResSeg33):
     """ResNet with Regularization for Segmentation Task"""
 
     def __init__(self, block):
-        ResSeg19.__init__(self, block)
+        ResSeg33.__init__(self, block)
 
         # Define number of channels
         self.in_channels = 64
@@ -242,22 +242,22 @@ class ResSeg19_Reg(ResSeg19):
 
 
 # Unit tests
-def check_ResSeg19_size(dtype):
-    """Unit test verifying output size for ResSeg19"""
+def check_ResSeg33_size(dtype):
+    """Unit test verifying output size for ResSeg33"""
     input_size = (8, 1, 128, 128)
     x = torch.zeros(input_size, dtype=dtype)
-    model = ResSeg19(ResidualBlock)
+    model = ResSeg33(ResidualBlock)
     scores = model(x)
     print scores.size()
     print model
     print ''
     assert [i for i in scores.size()]==[8, 2, 128, 128]
 
-def check_ResSeg19R_size(dtype):
-    """Unit test verifying output size for ResSeg19_Reg"""
+def check_ResSeg33R_size(dtype):
+    """Unit test verifying output size for ResSeg33_Reg"""
     input_size = (8, 1, 128, 128)
     x = torch.zeros(input_size, dtype=dtype)
-    model = ResSeg19_Reg(ResBlock_Reg)
+    model = ResSeg33_Reg(ResBlock_Reg)
     scores = model(x)
     print scores.size()
     print model
@@ -268,8 +268,8 @@ def check_ResSeg19R_size(dtype):
 # Main function (unit tests)
 def main():
     dtype = torch.float32
-    check_ResSeg19_size(dtype)
-    check_ResSeg19R_size(dtype)
+    check_ResSeg33_size(dtype)
+    check_ResSeg33R_size(dtype)
 
 
 if __name__=='__main__':

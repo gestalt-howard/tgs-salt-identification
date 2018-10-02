@@ -1,6 +1,7 @@
-# Script containing res_seg_19 network adapted to 39 layers
+# Script containing res_seg_33 network adapted to variable layers
 # Number of residual blocks in each residual "stack" is changed
 # Additonal convlutional layers added after each transpose-conv layer
+# Also features U-Net structure
 import torch
 import torch.nn as nn
 
@@ -9,15 +10,15 @@ import numpy as np
 import pdb
 
 # Models import
-from res_seg_19 import ResidualBlock, ResBlock_Reg, conv3x3
+from res_seg_33 import ResidualBlock, ResBlock_Reg, conv3x3
 
 
 # Segmentation ResNet
-class ResSeg39(nn.Module):
+class ResSegVar(nn.Module):
     """Network with Residual Blocks for Segmentation"""
 
     def __init__(self, block, layers):
-        super(ResSeg39, self).__init__()
+        super(ResSegVar, self).__init__()
 
         # Define number of input channels
         self.in_channels = 64
@@ -105,7 +106,7 @@ class ResSeg39(nn.Module):
         x = self.relu(self.bn2(self.conv2(x)))
         x = self.relu(self.bn3(self.conv3(x)))
 
-        # Res blocks
+        # Res stacks
         x1d = self.res1(x)
         x2d = self.res2(x1d)
         x3d = self.res3(x2d)
@@ -127,11 +128,11 @@ class ResSeg39(nn.Module):
 
 
 # Unit tests
-def check_ResSeg39_size(dtype):
-    """Unit test verifying output size of ResSeg39"""
+def check_ResSegVar_size(dtype):
+    """Unit test verifying output size of ResSegVar"""
     input_size = (8, 1, 128, 128)
     x = torch.zeros(input_size, dtype=dtype)
-    model = ResSeg39(ResidualBlock, [3, 4, 6, 3])
+    model = ResSegVar(ResidualBlock, [3, 4, 6, 3])
     scores = model(x)
     print scores.size()
     print model
@@ -141,7 +142,7 @@ def check_ResSeg39_size(dtype):
 # Main function (unit tests)
 def main():
     dtype = torch.float32
-    check_ResSeg39_size(dtype)
+    check_ResSegVar_size(dtype)
 
 
 if __name__=='__main__':

@@ -19,9 +19,9 @@ from utils.misc import Simple_Network
 from utils.train import train
 from utils.validate import validate
 # Model import
-from models.res_seg_19 import ResidualBlock, ResSeg19
-from models.res_seg_19 import ResBlock_Reg, ResSeg19_Reg
-from models.res_seg_39 import ResSeg39
+from models.res_seg_33 import ResidualBlock, ResSeg33
+from models.res_seg_33 import ResBlock_Reg, ResSeg33_Reg
+from models.res_seg_var import ResSegVar
 # Dataset import
 from datasets.tgs_dataset import data_formatter
 
@@ -72,10 +72,10 @@ def main():
     restart_token = check_dir(mod_path)  # Returns None if path exists
 
     # Define model (comment out irrelevant models as necessary)
-    # net = ResSeg19(ResidualBlock)
-    # net = ResSeg19_Reg(ResBlock_Reg)
-    # net = ResSeg39(ResidualBlock, [3, 4, 6, 3])
-    net = ResSeg39(ResBlock_Reg, [3, 4, 6, 3])
+    # net = ResSeg33(ResidualBlock)
+    # net = ResSeg33_Reg(ResBlock_Reg)
+    # net = ResSegVar(ResidualBlock, [3, 4, 6, 3]) # 45 layers
+    net = ResSegVar(ResBlock_Reg, [6, 8, 12, 6]) # 77 layers
 
     # Loss function
     criterion = nn.CrossEntropyLoss()
